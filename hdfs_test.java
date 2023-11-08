@@ -39,6 +39,8 @@ public class hdfs_test {
             CONF.addResource(new Path(CORE_SITE_PATH_STR));
             CONF.addResource(new Path(HDFS_SITE_PATH_STR));
             CONF.addResource(new Path(YARN_SITE_PATH_STR));
+        } catch (IOException e) {
+            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
         }
 
 
