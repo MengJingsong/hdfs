@@ -21,10 +21,8 @@ create_hdfs_dirs() {
         n=$2
         while [ $i -lt $n ]
         do
-                start=$(($i * 1000000))
-                end=$(($i * 1000000 + 1000000))
-                echo "xs-files-$start-$end"
-                hdfs dfs -mkdir xs-files-$start-$end
+                echo "xs-files-dir-$i"
+                hdfs dfs -mkdir xs-files-dir-$i
                 ((i += 1))
         done
 }
