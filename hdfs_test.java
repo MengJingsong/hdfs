@@ -34,11 +34,11 @@ public class hdfs_test {
             System.exit(1);
         }
 
-        int localFileStartID = Integer.ParseInt(args[0]);
-        int localFileEndID = Integer.ParseInt(args[1]);
-        int uploadBatchSize = Integer.ParseInt(args[2]);
-        int hdfsDirStartID = Integer.ParseInt(args[3]);
-        int hdfsDirEndID = Integer.ParseInt(args[4]);
+        int localFileStartID = Integer.parseInt(args[0]);
+        int localFileEndID = Integer.parseInt(args[1]);
+        int uploadBatchSize = Integer.parseInt(args[2]);
+        int hdfsDirStartID = Integer.parseInt(args[3]);
+        int hdfsDirEndID = Integer.parseInt(args[4]);
 
 
         System.out.println("Starting HDFS upload process...");
@@ -60,10 +60,11 @@ public class hdfs_test {
                 if (i + realBatchSize > localFilePaths.size()) {
                     realBatchSize = localFilePaths.size() - i;
                 }
-                Path[] srcPaths = localFilePaths.subList(i, i + realBatchSize).toArray();
+                Path[] srcs = new Path[realBatchSize];
+                srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
                 Future<String> future = executorService.submit(new Callable<String>() {
                     public String call() throws Exception {
-                        fs.copyFromLocalFile(false, true, srcPaths, hdfsDirPath);
+                        fs.copyFromLocalFile(false, true, srcs, hdfsDirPath);
                         return "upload files [" + i + " - " + (i + realBatchSize) + "] to " + hdfsDirPath.getName() + " finished";
                     }
                 });
