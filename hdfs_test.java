@@ -31,9 +31,8 @@ public class hdfs_test {
 
         int localFileStartID = Integer.parseInt(args[0]);
         int localFileEndID = Integer.parseInt(args[1]);
-        int uploadBatchSize = Integer.parseInt(args[2]);
-        int hdfsDirStartID = Integer.parseInt(args[3]);
-        int hdfsDirEndID = Integer.parseInt(args[4]);
+        int hdfsDirStartID = Integer.parseInt(args[2]);
+        int hdfsDirEndID = Integer.parseInt(args[3]);
 
 
         CONF.addResource(new Path(CORE_SITE_PATH_STR));
@@ -43,11 +42,11 @@ public class hdfs_test {
 
 
         System.out.println("Starting HDFS upload process...");
-        uploadFilesToHdfs(localFileStartID, localFileEndID, uploadBatchSize, hdfsDirStartID, hdfsDirEndID);
+        uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID);
         System.out.println("HDFS upload process completed.");
     }
 
-    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int uploadBatchSize, int hdfsDirStartID, int hdfsDirEndID) {
+    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID) {
         List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
@@ -59,12 +58,6 @@ public class hdfs_test {
             ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
             for (Path hdfsDirPath : hdfsDirPaths) {
                 for (int i = 0; i < localFilePaths.size(); i++) {
-                    // int realBatchSize = uploadBatchSize;
-                    // if (i + realBatchSize > localFilePaths.size()) {
-                    //     realBatchSize = localFilePaths.size() - i;
-                    // }
-                    // Path[] srcs = new Path[realBatchSize];
-                    // srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
                     Path localFilePath = localFilePaths.get(i);
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
