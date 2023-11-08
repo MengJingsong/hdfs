@@ -65,7 +65,7 @@ public class hdfs_test {
                     // }
                     // Path[] srcs = new Path[realBatchSize];
                     // srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
-                    Path localFilePath = localFilePaths[i];
+                    Path localFilePath = localFilePaths.get(i);
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
                             fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
@@ -87,11 +87,11 @@ public class hdfs_test {
                 }
             }
 
-        } catch (Exception e) {
-            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
-        } finally {
             fs.close();
             executorService.shutdown();
+
+        } catch (Exception e) {
+            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
         }
     }
 
