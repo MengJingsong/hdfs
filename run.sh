@@ -14,5 +14,5 @@ javac -cp ".:$HADOOP_CLASSPATH" $1.java
 
 if test -f $1.class; then
         # echo "java -cp ".:$HADOOP_CLASSPATH" $1"
-        java -cp ".:$HADOOP_CLASSPATH" $1
+        java -cp ".:$HADOOP_CLASSPATH" $1 $2 $3 $4 $5 $6
 fi
