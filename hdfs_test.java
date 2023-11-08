@@ -24,7 +24,7 @@ public class hdfs_test {
     private static final String HDFS_DIR = "/user/jason92/";
 
     public static void main(String[] args) {
-        if (args.length != 5) {
+        if (args.length != 4) {
             System.err.println("Please provide 5 arguements");
             System.exit(1);
         }
