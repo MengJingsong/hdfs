@@ -35,13 +35,11 @@ public class hdfs_test {
         int hdfsDirStartID = Integer.parseInt(args[3]);
         int hdfsDirEndID = Integer.parseInt(args[4]);
 
-        try {
-            CONF.addResource(new Path(CORE_SITE_PATH_STR));
-            CONF.addResource(new Path(HDFS_SITE_PATH_STR));
-            CONF.addResource(new Path(YARN_SITE_PATH_STR));
-        } catch (IOException e) {
-            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
-        }
+
+        CONF.addResource(new Path(CORE_SITE_PATH_STR));
+        CONF.addResource(new Path(HDFS_SITE_PATH_STR));
+        CONF.addResource(new Path(YARN_SITE_PATH_STR));
+
 
 
         System.out.println("Starting HDFS upload process...");
@@ -50,26 +48,28 @@ public class hdfs_test {
     }
 
     private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int uploadBatchSize, int hdfsDirStartID, int hdfsDirEndID) {
-        List<String> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
+        List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
 
-        FileSystem fs = FileSystem.get(CONF);
-        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
+        
 
         try {
+            FileSystem fs = FileSystem.get(CONF);
+            ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
             for (Path hdfsDirPath : hdfsDirPaths) {
-                for (int i = 0; i < localFilePaths.size(); i += uploadBatchSize) {
-                    int realBatchSize = uploadBatchSize;
-                    if (i + realBatchSize > localFilePaths.size()) {
-                        realBatchSize = localFilePaths.size() - i;
-                    }
-                    Path[] srcs = new Path[realBatchSize];
-                    srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
+                for (int i = 0; i < localFilePaths.size(); i++) {
+                    // int realBatchSize = uploadBatchSize;
+                    // if (i + realBatchSize > localFilePaths.size()) {
+                    //     realBatchSize = localFilePaths.size() - i;
+                    // }
+                    // Path[] srcs = new Path[realBatchSize];
+                    // srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
+                    Path localFilePath = localFilePaths[i];
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
-                            fs.copyFromLocalFile(false, true, srcs, hdfsDirPath);
-                            return "upload files [" + i + " - " + (i + realBatchSize) + "] to " + hdfsDirPath.getName() + " finished";
+                            fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
+                            return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
                         }
                     });
                     futures.add(future);
@@ -87,19 +87,19 @@ public class hdfs_test {
                 }
             }
 
-            fs.close();
-            executorService.shutdown();
-
         } catch (Exception e) {
             System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
+        } finally {
+            fs.close();
+            executorService.shutdown();
         }
     }
 
-    private static List<String> generateLocalFilePaths(int start, int end) {
-        List<String> localFilePaths = new ArrayList<>();
+    private static List<Path> generateLocalFilePaths(int start, int end) {
+        List<Path> localFilePaths = new ArrayList<>();
         for (int i = start; i < end; i++) {
             String localPath = LOCAL_DIR + "file-" + i;
-            localFilePaths.add(localPath);
+            localFilePaths.add(new Path(localPath));
         }
         return localFilePaths;
     }
