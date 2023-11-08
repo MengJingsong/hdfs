@@ -22,13 +22,6 @@ public class hdfs_test {
     private static final Configuration CONF = new Configuration();
     private static final String LOCAL_DIR = "/users/jason92/projects/hdfs/xs-files/";
     private static final String HDFS_DIR = "/user/jason92/";
-    private static ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
-
-    static {
-        CONF.addResource(new Path(CORE_SITE_PATH_STR));
-        CONF.addResource(new Path(HDFS_SITE_PATH_STR));
-        CONF.addResource(new Path(YARN_SITE_PATH_STR));
-    }
 
     public static void main(String[] args) {
         if (args.length != 5) {
@@ -42,60 +35,61 @@ public class hdfs_test {
         int hdfsDirStartID = Integer.parseInt(args[3]);
         int hdfsDirEndID = Integer.parseInt(args[4]);
 
+        try {
+            CONF.addResource(new Path(CORE_SITE_PATH_STR));
+            CONF.addResource(new Path(HDFS_SITE_PATH_STR));
+            CONF.addResource(new Path(YARN_SITE_PATH_STR));
+        }
+
 
         System.out.println("Starting HDFS upload process...");
         uploadFilesToHdfs(localFileStartID, localFileEndID, uploadBatchSize, hdfsDirStartID, hdfsDirEndID);
         System.out.println("HDFS upload process completed.");
     }
 
-    private static void uploadFilesToHdfs(int localFileStartID, int localFileEndID, int uploadBatchSize, int hdfsDirStartID, int hdfsDirEndID) {
+    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int uploadBatchSize, int hdfsDirStartID, int hdfsDirEndID) {
         List<String> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
 
         FileSystem fs = FileSystem.get(CONF);
+        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
 
-        for (Path hdfsDirPath : hdfsDirPaths) {
-
-            for (int i = 0; i < localFilePaths.size(); i += uploadBatchSize) {
-                int realBatchSize = uploadBatchSize;
-                if (i + realBatchSize > localFilePaths.size()) {
-                    realBatchSize = localFilePaths.size() - i;
-                }
-                Path[] srcs = new Path[realBatchSize];
-                srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
-                Future<String> future = executorService.submit(new Callable<String>() {
-                    public String call() throws Exception {
-                        fs.copyFromLocalFile(false, true, srcs, hdfsDirPath);
-                        return "upload files [" + i + " - " + (i + realBatchSize) + "] to " + hdfsDirPath.getName() + " finished";
-                    }
-                });
-                futures.add(future);
-            }
-        }
-
-        // Collect the results of the futures
-        for (Future<String> future : futures) {
-            try {
-                // Block and wait for the future to complete
-                System.out.println(future.get());
-            } catch (Exception e) {
-                System.err.println("Exception occurred during file upload:");
-                e.printStackTrace();
-            }
-        }
-
-        fs.close();
-
-        // Properly shut down the executor service
-        executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+            for (Path hdfsDirPath : hdfsDirPaths) {
+                for (int i = 0; i < localFilePaths.size(); i += uploadBatchSize) {
+                    int realBatchSize = uploadBatchSize;
+                    if (i + realBatchSize > localFilePaths.size()) {
+                        realBatchSize = localFilePaths.size() - i;
+                    }
+                    Path[] srcs = new Path[realBatchSize];
+                    srcs = localFilePaths.subList(i, i + realBatchSize).toArray(srcs);
+                    Future<String> future = executorService.submit(new Callable<String>() {
+                        public String call() throws Exception {
+                            fs.copyFromLocalFile(false, true, srcs, hdfsDirPath);
+                            return "upload files [" + i + " - " + (i + realBatchSize) + "] to " + hdfsDirPath.getName() + " finished";
+                        }
+                    });
+                    futures.add(future);
+                }
             }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-            Thread.currentThread().interrupt();
+
+            // Collect the results of the futures
+            for (Future<String> future : futures) {
+                try {
+                    // Block and wait for the future to complete
+                    System.out.println(future.get());
+                } catch (Exception e) {
+                    System.err.println("Exception occurred during file upload:");
+                    e.printStackTrace();
+                }
+            }
+
+            fs.close();
+            executorService.shutdown();
+
+        } catch (Exception e) {
+            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
         }
     }
 
