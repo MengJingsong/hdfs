@@ -1,7 +1,6 @@
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.commons.cli.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,13 +8,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
-import java.io.*;
 
 public class hdfs_test {
-
-    // private static final int NUMBER_OF_CORES = 30;
     private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/core-site.xml";
     private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/hdfs-site.xml";
     private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/yarn-site.xml";
@@ -25,7 +19,7 @@ public class hdfs_test {
 
     public static void main(String[] args) {
         if (args.length != 5) {
-            System.err.println("Please provide 5 arguements");
+            System.err.println("Please provide 5 arguments");
             System.exit(1);
         }
 
@@ -35,39 +29,42 @@ public class hdfs_test {
         int hdfsDirEndID = Integer.parseInt(args[3]);
         int numberOfCores = Integer.parseInt(args[4]);
 
-
         CONF.addResource(new Path(CORE_SITE_PATH_STR));
         CONF.addResource(new Path(HDFS_SITE_PATH_STR));
         CONF.addResource(new Path(YARN_SITE_PATH_STR));
 
-
-
         System.out.println("Starting HDFS upload process...");
-        uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
-        System.out.println("HDFS upload process completed.");
+        try {
+            uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
+            System.out.println("HDFS upload process completed.");
+        } catch (Exception e) {
+            System.err.println("Error during file upload: " + e.getMessage());
+        }
     }
 
-    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
+    private static void uploadFilesToHdfs(int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
         List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
 
-        
-
         try {
-            FileSystem fs = FileSystem.get(CONF);
             ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
-            for (Path hdfsDirPath : hdfsDirPaths) {
-                for (int i = 0; i < localFilePaths.size(); i++) {
-                    Path localFilePath = localFilePaths.get(i);
-                    Future<String> future = executorService.submit(new Callable<String>() {
-                        public String call() throws Exception {
-                            fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
-                            return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
-                        }
-                    });
-                    futures.add(future);
+            
+            try (FileSystem fs = FileSystem.get(CONF)) {
+                for (Path hdfsDirPath : hdfsDirPaths) {
+                    for (Path localFilePath : localFilePaths) {
+                        // Path localFilePath = localFilePaths.get(i);
+                        Future<String> future = executorService.submit(new Callable<String>() {
+                            public String call() throws Exception {
+                                fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
+                                return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
+                            }
+                        });
+                        futures.add(future);
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("Error initializing FileSystem: " + e.getMessage());
             }
 
             // Collect the results of the futures
@@ -80,12 +77,10 @@ public class hdfs_test {
                     e.printStackTrace();
                 }
             }
-
-            fs.close();
-            executorService.shutdown();
-
         } catch (Exception e) {
-            System.err.println("Error loading Hadoop configuration files: " + e.getMessage());
+            System.err.println("Error during file upload: " + e.getMessage());
+        } finally {
+            executorService.shutdown();
         }
     }
 
