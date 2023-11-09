@@ -15,7 +15,7 @@ import java.io.*;
 
 public class hdfs_test {
 
-    private static final int NUMBER_OF_CORES = 30;
+    // private static final int NUMBER_OF_CORES = 30;
     private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/core-site.xml";
     private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/hdfs-site.xml";
     private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/yarn-site.xml";
@@ -24,7 +24,7 @@ public class hdfs_test {
     private static final String HDFS_DIR = "/user/jason92/";
 
     public static void main(String[] args) {
-        if (args.length != 4) {
+        if (args.length != 5) {
             System.err.println("Please provide 5 arguements");
             System.exit(1);
         }
@@ -33,6 +33,7 @@ public class hdfs_test {
         int localFileEndID = Integer.parseInt(args[1]);
         int hdfsDirStartID = Integer.parseInt(args[2]);
         int hdfsDirEndID = Integer.parseInt(args[3]);
+        int numberOfCores = Integer.parseInt(args[4]);
 
 
         CONF.addResource(new Path(CORE_SITE_PATH_STR));
@@ -42,11 +43,11 @@ public class hdfs_test {
 
 
         System.out.println("Starting HDFS upload process...");
-        uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID);
+        uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
         System.out.println("HDFS upload process completed.");
     }
 
-    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID) {
+    private static void uploadFilesToHdfs (int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
         List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
@@ -55,7 +56,7 @@ public class hdfs_test {
 
         try {
             FileSystem fs = FileSystem.get(CONF);
-            ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
+            ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
             for (Path hdfsDirPath : hdfsDirPaths) {
                 for (int i = 0; i < localFilePaths.size(); i++) {
                     Path localFilePath = localFilePaths.get(i);
