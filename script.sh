@@ -27,13 +27,45 @@ create_hdfs_dirs() {
         done
 }
 
+parallel_put() {
+        start=$1
+        end=$2
+        step=$3
+        hdfs_dir=$4
+
+        i=$start
+        while [ $i -lt $end ]
+        do
+                j=$i
+                ps=()
+                start_time=$(date +%s%N)
+                while [[ $j -lt $end ]] && [[ $j -lt $((i+step)) ]]
+                do
+                        hdfs dfs -put xs-files/file-$j $hdfs_dir &
+                        p=$!
+                        ps+=($!)
+                        ((j += 1))
+                done
+                for p in ${ps[*]}; do
+                        wait $p
+                done
+                end_time=$(date +%s%N)
+                ms=$(($((end_time - start_time)) / 1000000))
+                echo "put [$i - $((i+step))] have done, time duration: $ms ms"
+                ((i += $step))
+        done
+}
+
 global_start_time=$(date +%s%N)
 case $1 in
-        "local_files")
+        "local-files")
                 create_local_files $2 $3
                 ;;
-        "hdfs_dirs")
+        "hdfs-dirs")
                 create_hdfs_dirs $2 $3
+                ;;
+        "hdfs-put")
+                parallel_put $2 $3 $4 $5
                 ;;
         *)
                 echo "invalid argument $1"
