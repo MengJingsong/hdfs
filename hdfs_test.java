@@ -77,10 +77,11 @@ public class hdfs_test {
                     e.printStackTrace();
                 }
             }
+
+            executorService.shutdown();
+
         } catch (Exception e) {
             System.err.println("Error during file upload: " + e.getMessage());
-        } finally {
-            executorService.shutdown();
         }
     }
 
