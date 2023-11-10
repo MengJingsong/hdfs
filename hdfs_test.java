@@ -46,28 +46,24 @@ public class hdfs_test {
         List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
-
-        try {
-            ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
             
-            try (FileSystem fs = FileSystem.get(CONF)) {
-                for (Path hdfsDirPath : hdfsDirPaths) {
-                    if (!fs.exists(hdfsDirPath)) {
-                        fs.mkdirs(hdfsDirPath);
-                    }
-                    for (Path localFilePath : localFilePaths) {
-                        // Path localFilePath = localFilePaths.get(i);
-                        Future<String> future = executorService.submit(new Callable<String>() {
-                            public String call() throws Exception {
-                                fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
-                                return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
-                            }
-                        });
-                        futures.add(future);
-                    }
+        try (FileSystem fs = FileSystem.get(CONF)) {
+            ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
+
+            for (Path hdfsDirPath : hdfsDirPaths) {
+                if (!fs.exists(hdfsDirPath)) {
+                    fs.mkdirs(hdfsDirPath);
                 }
-            } catch (Exception e) {
-                System.err.println("Error initializing FileSystem: " + e.getMessage());
+                for (Path localFilePath : localFilePaths) {
+                    // Path localFilePath = localFilePaths.get(i);
+                    Future<String> future = executorService.submit(new Callable<String>() {
+                        public String call() throws Exception {
+                            fs.copyFromLocalFile(false, true, localFilePath, hdfsDirPath);
+                            return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
+                        }
+                    });
+                    futures.add(future);
+                }
             }
 
             // Collect the results of the futures
