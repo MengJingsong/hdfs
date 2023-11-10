@@ -47,7 +47,8 @@ public class hdfs_test {
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
         List<Future<String>> futures = new ArrayList<>();
             
-        try (FileSystem fs = FileSystem.get(CONF)) {
+        try {
+            FileSystem fs = FileSystem.get(CONF)
             ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
 
             for (Path hdfsDirPath : hdfsDirPaths) {
@@ -77,6 +78,7 @@ public class hdfs_test {
                 }
             }
 
+            fs.close();
             executorService.shutdown();
 
         } catch (Exception e) {
