@@ -69,10 +69,13 @@ public class hdfs_test {
             }
 
             // Collect the results of the futures
-            for (Future<String> future : futures) {
+            for (int i = 0; i < futures.size(); i++) {
                 try {
-                    // Block and wait for the future to complete
-                    System.out.println(future.get());
+                    Future<String> future = futures.get(i);
+                    String ret = future.get();
+                    if (i % 1000 = 0) {
+                        System.out.println(ret);
+                    }
                 } catch (Exception e) {
                     System.err.println("Exception occurred during file upload:");
                     e.printStackTrace();
