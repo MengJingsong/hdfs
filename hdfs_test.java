@@ -73,7 +73,7 @@ public class hdfs_test {
                 try {
                     Future<String> future = futures.get(i);
                     String ret = future.get();
-                    if (i % 1000 = 0) {
+                    if (i % 1000 == 0) {
                         System.out.println(ret);
                     }
                 } catch (Exception e) {
