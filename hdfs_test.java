@@ -61,7 +61,7 @@ public class hdfs_test {
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
                             fs.copyFromLocalFile(false, true, localFilePath, hdfsFilePath);
-                            return "upload file " + localFilePath.getName() + " to " + hdfsDirPath.getName() + " finished";
+                            return "upload to " + hdfsFilePath + " finished";
                         }
                     });
                     futures.add(future);
