@@ -55,6 +55,9 @@ public class hdfs_test {
                 if (!fs.exists(hdfsDirPath)) {
                     fs.mkdirs(hdfsDirPath);
                 }
+            }
+
+            for (Path hdfsDirPath : hdfsDirPaths) {
                 for (Path localFilePath : localFilePaths) {
                     // Path localFilePath = localFilePaths.get(i);
                     Path hdfsFilePath = new Path(hdfsDirPath, localFilePath.getName());
