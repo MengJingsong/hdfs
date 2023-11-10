@@ -45,7 +45,6 @@ public class hdfs_test {
     private static void uploadFilesToHdfs(int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
         List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
-        List<Future<String>> futures = new ArrayList<>();
             
         try {
             FileSystem fs = FileSystem.get(CONF);
@@ -55,9 +54,7 @@ public class hdfs_test {
                 if (!fs.exists(hdfsDirPath)) {
                     fs.mkdirs(hdfsDirPath);
                 }
-            }
-
-            for (Path hdfsDirPath : hdfsDirPaths) {
+                List<Future<String>> futures = new ArrayList<>();
                 for (Path localFilePath : localFilePaths) {
                     // Path localFilePath = localFilePaths.get(i);
                     Path hdfsFilePath = new Path(hdfsDirPath, localFilePath.getName());
@@ -69,19 +66,18 @@ public class hdfs_test {
                     });
                     futures.add(future);
                 }
-            }
-
-            // Collect the results of the futures
-            for (int i = 0; i < futures.size(); i++) {
-                try {
-                    Future<String> future = futures.get(i);
-                    String ret = future.get();
-                    if (i % 1000 == 0) {
-                        System.out.println(ret);
+                // Collect the results of the futures
+                for (int i = 0; i < futures.size(); i++) {
+                    try {
+                        Future<String> future = futures.get(i);
+                        String ret = future.get();
+                        if (i % 1000 == 0) {
+                            System.out.println(ret);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Exception occurred during file upload:");
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    System.err.println("Exception occurred during file upload:");
-                    e.printStackTrace();
                 }
             }
 
