@@ -48,7 +48,7 @@ public class hdfs_test {
         List<Future<String>> futures = new ArrayList<>();
             
         try {
-            FileSystem fs = FileSystem.get(CONF)
+            FileSystem fs = FileSystem.get(CONF);
             ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
 
             for (Path hdfsDirPath : hdfsDirPaths) {
