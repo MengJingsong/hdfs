@@ -52,6 +52,9 @@ public class hdfs_test {
             
             try (FileSystem fs = FileSystem.get(CONF)) {
                 for (Path hdfsDirPath : hdfsDirPaths) {
+                    if (!fs.exists(hdfsDirPath)) {
+                        fs.mkdirs(hdfsDirPath);
+                    }
                     for (Path localFilePath : localFilePaths) {
                         // Path localFilePath = localFilePaths.get(i);
                         Future<String> future = executorService.submit(new Callable<String>() {
