@@ -61,14 +61,6 @@ public class hdfs_test {
                     final int ii = i;
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
-
-
-
-                            // boolean res = fs.createNewFile(hdfsFilePath);
-                            // if (res) {
-                            //     return "create new file: " + hdfsFilePath + " succeed";
-                            // }
-                            // return "file: " + hdfsFilePath + " already exist";
                             OutputStream out = null;
                             try {
                                 out = fs.create(hdfsFilePath);
@@ -81,8 +73,6 @@ public class hdfs_test {
                                     out.close();
                                 }
                             }
-                            
-                            
                             return "create new file: " + hdfsFilePath + " succeed";
 
                         }
