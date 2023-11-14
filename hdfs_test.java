@@ -60,8 +60,11 @@ public class hdfs_test {
                     Path hdfsFilePath = new Path(hdfsDirPath, localFilePath.getName());
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
-                            fs.copyFromLocalFile(false, true, localFilePath, hdfsFilePath);
-                            return "upload to " + hdfsFilePath + " finished";
+                            // fs.copyFromLocalFile(false, true, localFilePath, hdfsFilePath);
+                            // return "upload to " + hdfsFilePath + " finished";
+                            boolean res = fs.createNewFile(hdfsFilePath);
+                            return "create new file: " + hdfsFilePath + " " + res;
+
                         }
                     });
                     futures.add(future);
