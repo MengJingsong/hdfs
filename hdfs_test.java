@@ -58,6 +58,7 @@ public class hdfs_test {
                 List<Future<String>> futures = new ArrayList<>();
                 for (int i = hdfsFileStartID; i < hdfsFileEndID; i++) {
                     Path hdfsFilePath = new Path(hdfsDirPath, "file-" + i);
+                    final int ii = i;
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
 
@@ -71,7 +72,7 @@ public class hdfs_test {
 
                             OutputStream out = fs.create(hdfsFilePath);
                             BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
-                            String content = String.valueOf(i);
+                            String content = String.valueOf(ii);
                             byte[] data = content.getBytes("UTF-8");
                             bufferedOut.write(data);
                             return "create new file: " + hdfsFilePath + " succeed";
