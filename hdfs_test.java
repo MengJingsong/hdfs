@@ -35,14 +35,14 @@ public class hdfs_test {
 
         System.out.println("Starting HDFS upload process...");
         try {
-            uploadFilesToHdfs(hdfsFileStartID, hdfsFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
+            createNewFilesInHdfs(hdfsFileStartID, hdfsFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
             System.out.println("HDFS upload process completed.");
         } catch (Exception e) {
             System.err.println("Error during file upload: " + e.getMessage());
         }
     }
 
-    private static void uploadFilesToHdfs(int hdfsFileStartID, int hdfsFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
+    private static void createNewFilesInHdfs(int hdfsFileStartID, int hdfsFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
             
         try {
@@ -58,11 +58,21 @@ public class hdfs_test {
                     Path hdfsFilePath = new Path(hdfsDirPath, "file-" + i);
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
-                            boolean res = fs.createNewFile(hdfsFilePath);
-                            if (res) {
-                                return "create new file: " + hdfsFilePath + " succeed";
-                            }
-                            return "file: " + hdfsFilePath + " already exist";
+
+
+
+                            // boolean res = fs.createNewFile(hdfsFilePath);
+                            // if (res) {
+                            //     return "create new file: " + hdfsFilePath + " succeed";
+                            // }
+                            // return "file: " + hdfsFilePath + " already exist";
+
+                            OutputStream out = fs.create(hdfsFilePath);
+                            BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
+                            String content = String.valueOf(i);
+                            byte[] data = content.getBytes("UTF-8");
+                            bufferedOut.write(data);
+                            return "create new file: " + hdfsFilePath + " succeed";
 
                         }
                     });
