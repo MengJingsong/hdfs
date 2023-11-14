@@ -23,8 +23,8 @@ public class hdfs_test {
             System.exit(1);
         }
 
-        int localFileStartID = Integer.parseInt(args[0]);
-        int localFileEndID = Integer.parseInt(args[1]);
+        int hdfsFileStartID = Integer.parseInt(args[0]);
+        int hdfsFileEndID = Integer.parseInt(args[1]);
         int hdfsDirStartID = Integer.parseInt(args[2]);
         int hdfsDirEndID = Integer.parseInt(args[3]);
         int numberOfCores = Integer.parseInt(args[4]);
@@ -35,15 +35,14 @@ public class hdfs_test {
 
         System.out.println("Starting HDFS upload process...");
         try {
-            uploadFilesToHdfs(localFileStartID, localFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
+            uploadFilesToHdfs(hdfsFileStartID, hdfsFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
             System.out.println("HDFS upload process completed.");
         } catch (Exception e) {
             System.err.println("Error during file upload: " + e.getMessage());
         }
     }
 
-    private static void uploadFilesToHdfs(int localFileStartID, int localFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
-        List<Path> localFilePaths = generateLocalFilePaths(localFileStartID, localFileEndID);
+    private static void uploadFilesToHdfs(int hdfsFileStartID, int hdfsFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
         List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
             
         try {
@@ -55,15 +54,15 @@ public class hdfs_test {
                     fs.mkdirs(hdfsDirPath);
                 }
                 List<Future<String>> futures = new ArrayList<>();
-                for (Path localFilePath : localFilePaths) {
-                    // Path localFilePath = localFilePaths.get(i);
-                    Path hdfsFilePath = new Path(hdfsDirPath, localFilePath.getName());
+                for (int i = hdfsFileStartID; i < hdfsFileEndID; i++) {
+                    Path hdfsFilePath = new Path(hdfsDirPath, "file-" + i);
                     Future<String> future = executorService.submit(new Callable<String>() {
                         public String call() throws Exception {
-                            // fs.copyFromLocalFile(false, true, localFilePath, hdfsFilePath);
-                            // return "upload to " + hdfsFilePath + " finished";
                             boolean res = fs.createNewFile(hdfsFilePath);
-                            return "create new file: " + hdfsFilePath + " " + res;
+                            if (res) {
+                                return "create new file: " + hdfsFilePath + " succeed";
+                            }
+                            return "file: " + hdfsFilePath + " already exist";
 
                         }
                     });
@@ -90,15 +89,6 @@ public class hdfs_test {
         } catch (Exception e) {
             System.err.println("Error during file upload: " + e.getMessage());
         }
-    }
-
-    private static List<Path> generateLocalFilePaths(int start, int end) {
-        List<Path> localFilePaths = new ArrayList<>();
-        for (int i = start; i < end; i++) {
-            String localPath = LOCAL_DIR + "file-" + i;
-            localFilePaths.add(new Path(localPath));
-        }
-        return localFilePaths;
     }
 
     private static List<Path> generateHdfsDirPaths(int start, int end) {
