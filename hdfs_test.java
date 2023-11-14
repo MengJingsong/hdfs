@@ -69,12 +69,20 @@ public class hdfs_test {
                             //     return "create new file: " + hdfsFilePath + " succeed";
                             // }
                             // return "file: " + hdfsFilePath + " already exist";
-
-                            OutputStream out = fs.create(hdfsFilePath);
-                            BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
-                            String content = String.valueOf(ii);
-                            byte[] data = content.getBytes("UTF-8");
-                            bufferedOut.write(data);
+                            OutputStream out = null;
+                            try {
+                                out = fs.create(hdfsFilePath);
+                                BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
+                                String content = String.valueOf(ii);
+                                byte[] data = content.getBytes("UTF-8");
+                                bufferedOut.write(data);
+                            } finally {
+                                if (out != null) {
+                                    out.close();
+                                }
+                            }
+                            
+                            
                             return "create new file: " + hdfsFilePath + " succeed";
 
                         }
