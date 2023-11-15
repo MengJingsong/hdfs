@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 
@@ -49,55 +50,37 @@ public class hdfs_test {
             
         try {
             FileSystem fs = FileSystem.get(CONF);
-            ExecutorService executorService = Executors.newFixedThreadPool(numberOfCores);
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numberOfCores);
 
             for (Path hdfsDirPath : hdfsDirPaths) {
                 if (!fs.exists(hdfsDirPath)) {
                     fs.mkdirs(hdfsDirPath);
                 }
-                List<Future<String>> futures = new ArrayList<>();
                 for (int i = hdfsFileStartID; i < hdfsFileEndID; i++) {
                     Path hdfsFilePath = new Path(hdfsDirPath, "file-" + i);
-                    final int ii = i;
-                    Future<String> future = executorService.submit(new Callable<String>() {
-                        public String call() throws Exception {
-                            OutputStream out = null;
-                            try {
-                                out = fs.create(hdfsFilePath);
-                                BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
-                                String content = String.valueOf(ii);
-                                byte[] data = content.getBytes("UTF-8");
-                                bufferedOut.write(data);
-                            } finally {
-                                if (out != null) {
-                                    out.close();
-                                } else {
-                                    return "create new file: " + hdfsFilePath + " failed";
-                                }
+                    final int data = i;
+                    executor.submit(() -> {
+                        try {
+                            String content = String.valueOf(data);
+                            fs.create(hdfsFilePath).writeBytes(content);
+                            if (data % 1000 == 0) {
+                                System.out.println("Created file " + hdfsFilePath + " succeed"); 
                             }
-                            return "create new file: " + hdfsFilePath + " succeed";
-
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     });
-                    futures.add(future);
                 }
-                // Collect the results of the futures
-                for (int i = 0; i < futures.size(); i++) {
-                    try {
-                        Future<String> future = futures.get(i);
-                        String ret = future.get();
-                        if (i % 1000 == 0) {
-                            System.out.println(ret);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Exception occurred during file upload:");
-                        e.printStackTrace();
-                    }
-                }
+
+            }
+
+            executor.shutdown();
+
+            while (!executor.isTerminated()) {
+                Thread.sleep(100);
             }
 
             fs.close();
-            executorService.shutdown();
 
         } catch (Exception e) {
             System.err.println("Error during file upload: " + e.getMessage());
