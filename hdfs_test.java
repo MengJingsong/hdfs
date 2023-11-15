@@ -71,6 +71,8 @@ public class hdfs_test {
                             } finally {
                                 if (out != null) {
                                     out.close();
+                                } else {
+                                    return "create new file: " + hdfsFilePath + " failed";
                                 }
                             }
                             return "create new file: " + hdfsFilePath + " succeed";
