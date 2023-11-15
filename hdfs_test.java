@@ -62,10 +62,12 @@ public class hdfs_test {
                     executor.submit(() -> {
                         try {
                             String content = String.valueOf(data);
-                            fs.create(hdfsFilePath).writeBytes(content);
+                            FSDataOutputStream s = fs.create(hdfsFilePath);
+                            s.writeBytes(content);
                             if (data % 1000 == 0) {
                                 System.out.println("Created file " + hdfsFilePath + " succeed"); 
                             }
+                            s.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
