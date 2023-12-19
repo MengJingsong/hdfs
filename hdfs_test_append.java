@@ -31,7 +31,7 @@ public class hdfs_test_append {
 
         System.out.println("Starting HDFS append process...");
         try {
-            appendFileInHdfs(fileName, threadNum);
+            appendFileInHdfs(threadNum, fileName);
             System.out.println("HDFS append process completed.");
         } catch (Exception e) {
             System.err.println("Error during file append: " + e.getMessage());
