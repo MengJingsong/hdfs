@@ -22,16 +22,19 @@ public class hdfs_test {
 
     public static void main(String[] args) {
 
+        String fileName = args[0];
+        int threadNum = Integer.parseInt(args[1]);
+
         CONF.addResource(new Path(CORE_SITE_PATH_STR));
         CONF.addResource(new Path(HDFS_SITE_PATH_STR));
         CONF.addResource(new Path(YARN_SITE_PATH_STR));
 
-        System.out.println("Starting HDFS upload process...");
+        System.out.println("Starting HDFS append process...");
         try {
-            createNewFilesInHdfs(hdfsFileStartID, hdfsFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
-            System.out.println("HDFS upload process completed.");
+            appendFileInHdfs(fileName, threadNum);
+            System.out.println("HDFS append process completed.");
         } catch (Exception e) {
-            System.err.println("Error during file upload: " + e.getMessage());
+            System.err.println("Error during file append: " + e.getMessage());
         }
     }
 
