@@ -2,6 +2,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.commons.cli.*;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +43,7 @@ public class hdfs_test_append {
             
         try {
             int numberOfCores = Runtime.getRuntime().availableProcessors();
+            System.out.println("Number of Cores:" + numberOfCores);
             FileSystem fs = FileSystem.get(CONF);
             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numberOfCores);
 
