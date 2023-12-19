@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 
-public class hdfs_test {
+public class hdfs_test_append {
     private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/core-site.xml";
     private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/hdfs-site.xml";
     private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/yarn-site.xml";
