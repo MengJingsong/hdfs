@@ -41,6 +41,7 @@ public class hdfs_test_append {
     private static void appendFileInHdfs(int threadNum, String fileName) {
             
         try {
+            int numberOfCores = Runtime.getRuntime().availableProcessors();
             FileSystem fs = FileSystem.get(CONF);
             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numberOfCores);
 
