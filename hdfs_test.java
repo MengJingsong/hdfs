@@ -9,92 +9,95 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+
+
 
 public class hdfs_test {
-    private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/core-site.xml";
-    private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/hdfs-site.xml";
-    private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-3.3.6/etc/hadoop/yarn-site.xml";
+    private static final String HADOOP_VERSION = "3.2.2";
+    private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/core-site.xml";
+    private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/hdfs-site.xml";
+    private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/yarn-site.xml";
     private static final Configuration CONF = new Configuration();
-    private static final String LOCAL_DIR = "/users/jason92/projects/hdfs/xs-files/";
     private static final String HDFS_DIR = "/user/jason92/";
 
-    public static void main(String[] args) {
-        if (args.length != 5) {
-            System.err.println("Please provide 5 arguments");
-            System.exit(1);
+    private static class ThreadTask implements Runnable {
+        private FileSystem fs;
+        private Path dir;
+        private int threadID;
+        private int totalThread;
+        private int numOfActions;
+
+
+        public ThreadTask (FileSystem fs, String dir, int threadID, int totalThread, int numOfActions) {
+            this.fs = fs;
+            this.dir = new Path(dir);
+            this.threadID = threadID;
+            this.totalThread = totalThread;
+            this.numOfActions = numOfActions;
         }
 
-        int hdfsFileStartID = Integer.parseInt(args[0]);
-        int hdfsFileEndID = Integer.parseInt(args[1]);
-        int hdfsDirStartID = Integer.parseInt(args[2]);
-        int hdfsDirEndID = Integer.parseInt(args[3]);
-        int numberOfCores = Integer.parseInt(args[4]);
+        @Override
+        public void run() {
+            try {
+                // ThreadLocalRandom tlr = ThreadLocalRandom.current();
+                for (int i = 0; i < this.numOfActions; i++) {
+                    int fileID = i * this.totalThread + this.threadID;
+                    Path path = new Path(this.dir, "file-" + fileID);
+                    String content = String.valueOf(fileID);
+                    OutputStream os = this.fs.create(path, true);
+                    os.write(content.getBytes());
+                    System.out.format("write %s to file %d%n", content, fileID);
+                    os.close();
+                    for (int j = i; j >=0 && j > i - 5; j--) {
+                        fileID = j * this.totalThread + this.threadID;
+                        path = new Path(this.dir, "file-" + fileID);
+                        InputStream is = fs.open(path);
+                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                        content = br.readLine();
+                        System.out.format("read %s from file %d%n", content, fileID);
+                        br.close();
+                        is.close();
+                    }
+                }
 
+            } catch (Exception e) {
+                System.err.format("Exception in run(): %s", e.getMessage());
+            }
+        }
+    };
+
+    public static void main(String[] args) {
         CONF.addResource(new Path(CORE_SITE_PATH_STR));
         CONF.addResource(new Path(HDFS_SITE_PATH_STR));
         CONF.addResource(new Path(YARN_SITE_PATH_STR));
 
-        System.out.println("Starting HDFS upload process...");
-        try {
-            createNewFilesInHdfs(hdfsFileStartID, hdfsFileEndID, hdfsDirStartID, hdfsDirEndID, numberOfCores);
-            System.out.println("HDFS upload process completed.");
-        } catch (Exception e) {
-            System.err.println("Error during file upload: " + e.getMessage());
-        }
-    }
+        int threadPoolSize = Integer.parseInt(args[0]);
+        int threadSize = Integer.parseInt(args[1]);
+        int numOfActions = Integer.parseInt(args[2]);
 
-    private static void createNewFilesInHdfs(int hdfsFileStartID, int hdfsFileEndID, int hdfsDirStartID, int hdfsDirEndID, int numberOfCores) {
-        List<Path> hdfsDirPaths = generateHdfsDirPaths(hdfsDirStartID, hdfsDirEndID);
-            
         try {
             FileSystem fs = FileSystem.get(CONF);
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numberOfCores);
 
-            for (Path hdfsDirPath : hdfsDirPaths) {
-                if (!fs.exists(hdfsDirPath)) {
-                    fs.mkdirs(hdfsDirPath);
-                }
-                for (int i = hdfsFileStartID; i < hdfsFileEndID; i++) {
-                    Path hdfsFilePath = new Path(hdfsDirPath, "file-" + i);
-                    final int data = i;
-                    executor.submit(() -> {
-                        try {
-                            String content = String.valueOf(data);
-                            OutputStream os = fs.create(hdfsFilePath);
-                            os.write(content.getBytes());
-                            os.close();
-                            if (data % 1000 == 0) {
-                                System.out.println("Created file " + hdfsFilePath + " succeed"); 
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
+            ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
 
+            for (int i = 0; i < threadSize; i++) {
+                ThreadTask task = new ThreadTask(fs, HDFS_DIR, i, threadSize, numOfActions);
+                executor.execute(task);
             }
 
             executor.shutdown();
 
-            while (!executor.isTerminated()) {
-                Thread.sleep(100);
-            }
-
-            fs.close();
-
         } catch (Exception e) {
-            System.err.println("Error during file upload: " + e.getMessage());
+            System.err.format("Exception in main(): %s", e.getMessage());
         }
-    }
 
-    private static List<Path> generateHdfsDirPaths(int start, int end) {
-        List<Path> hdfsDirPaths = new ArrayList<>();
-        for (int i = start; i < end; i++) {
-            String hdfsDirPath = HDFS_DIR + "xs-files-dir-" + i + "/";
-            hdfsDirPaths.add(new Path(hdfsDirPath));
-        }
-        return hdfsDirPaths;
+        
     }
 }
