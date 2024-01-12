@@ -53,7 +53,7 @@ public class hdfs_test {
                     String content = String.valueOf(fileID);
                     OutputStream os = this.fs.create(path, true);
                     os.write(content.getBytes());
-                    if (i % 1000 == 0) System.out.format("write %s to file %d%n", content, fileID);
+                    if (i % 10 == 0) System.out.format("write %s to file %d%n", content, fileID);
                     os.close();
                     for (int j = i; j >=0 && j > i - 5; j--) {
                         fileID = j * this.totalThread + this.threadID;
@@ -61,7 +61,7 @@ public class hdfs_test {
                         InputStream is = fs.open(path);
                         BufferedReader br = new BufferedReader(new InputStreamReader(is));
                         content = br.readLine();
-                        if (i % 1000 == 0) System.out.format("read %s from file %d%n", content, fileID);
+                        if (i % 10 == 0) System.out.format("read %s from file %d%n", content, fileID);
                         br.close();
                         is.close();
                     }
