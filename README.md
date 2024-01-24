@@ -1,4 +1,4 @@
-source config.sh HADOOP_VERSION
+source config.sh PATH_TO_HADOOP
 
 javac hdfs_test.java
 
