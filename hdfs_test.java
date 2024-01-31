@@ -22,7 +22,7 @@ import java.io.InputStreamReader;
 
 
 public class hdfs_test {
-    private static final String HADOOP_VERSION = "3.2.2";
+    private static final String HADOOP_VERSION = "2.9.2";
     private static final String CORE_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/core-site.xml";
     private static final String HDFS_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/hdfs-site.xml";
     private static final String YARN_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/yarn-site.xml";
@@ -53,7 +53,7 @@ public class hdfs_test {
 
             try {
                 this.ugi.doAs((java.security.PrivilegedExceptionAction<Void>) () -> {
-                    Scanner scanner = new Scanner(System.in);
+                    // Scanner scanner = new Scanner(System.in);
                     for (int i = 0; i < this.numOfActions; i++) {
                         int fileID = i * this.totalThread + this.threadID;
                         Path path = new Path(this.dir, "file-" + fileID);
@@ -66,6 +66,7 @@ public class hdfs_test {
                         // System.out.println("user input is: " + str);
                         Thread.sleep(20000);
                         System.out.format("write %s to file %d done after 20 Seconds%n", content, fileID);
+                        os.close();
                     }
                     return null;
                 });
@@ -81,9 +82,9 @@ public class hdfs_test {
         CONF.addResource(new Path(YARN_SITE_PATH_STR));
 
         String username = args[0];
-        int threadPoolSize = Integer.parseInt(args[1]);
-        int threadSize = Integer.parseInt(args[2]);
-        int numOfActions = Integer.parseInt(args[3]);
+        // int threadPoolSize = Integer.parseInt(args[1]);
+        int threadSize = Integer.parseInt(args[1]);
+        // int numOfActions = Integer.parseInt(args[3]);
         String hdfs_dir = "/user/"+username;
         
         try {
@@ -91,7 +92,7 @@ public class hdfs_test {
 
             FileSystem fs = FileSystem.get(CONF);
 
-            ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
+            ExecutorService executor = Executors.newFixedThreadPool(threadSize);
 
             for (int i = 0; i < threadSize; i++) {
                 // ThreadTask task = new ThreadTask(ugi, fs, hdfs_dir, i, threadSize, numOfActions);
@@ -103,8 +104,9 @@ public class hdfs_test {
                         OutputStream os = fs.create(path, true);
                         os.write("test".getBytes());
                         System.out.format("file %d start%n", finalI);
-                        Thread.sleep(15000);
+                        Thread.sleep(3600000);
                         System.out.format("file %d done%n", finalI);
+                        os.close();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
