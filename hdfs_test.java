@@ -11,6 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Scanner;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.BufferedReader;
@@ -22,9 +23,9 @@ import java.io.InputStreamReader;
 
 public class hdfs_test {
     private static final String HADOOP_VERSION = "3.2.2";
-    private static final String CORE_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/core-site.xml";
-    private static final String HDFS_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/hdfs-site.xml";
-    private static final String YARN_SITE_PATH_STR = "/users/jason92/local/hadoop-" + HADOOP_VERSION + "/etc/hadoop/yarn-site.xml";
+    private static final String CORE_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/core-site.xml";
+    private static final String HDFS_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/hdfs-site.xml";
+    private static final String YARN_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/yarn-site.xml";
     private static final Configuration CONF = new Configuration();
     // private static final String HDFS_DIR = "/user/jason92/";
 
@@ -49,51 +50,22 @@ public class hdfs_test {
 
         @Override
         public void run() {
-            // try {
-            //     for (int i = 0; i < this.numOfActions; i++) {
-            //         int fileID = i * this.totalThread + this.threadID;
-            //         Path path = new Path(this.dir, "file-" + fileID);
-            //         String content = String.valueOf(fileID);
-            //         OutputStream os = this.fs.create(path, true);
-            //         os.write(content.getBytes());
-            //         if (i % 10 == 0) System.out.format("write %s to file %d%n", content, fileID);
-            //         os.close();
-            //         for (int j = i; j >=0 && j > i - 5; j--) {
-            //             fileID = j * this.totalThread + this.threadID;
-            //             path = new Path(this.dir, "file-" + fileID);
-            //             InputStream is = fs.open(path);
-            //             BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            //             content = br.readLine();
-            //             if (i % 10 == 0) System.out.format("read %s from file %d%n", content, fileID);
-            //             br.close();
-            //             is.close();
-            //         }
-            //     }
-
-            // } catch (Exception e) {
-            //     System.err.format("Exception in run(): %s", e.getMessage());
-            // }
 
             try {
                 this.ugi.doAs((java.security.PrivilegedExceptionAction<Void>) () -> {
+                    Scanner scanner = new Scanner(System.in);
                     for (int i = 0; i < this.numOfActions; i++) {
                         int fileID = i * this.totalThread + this.threadID;
                         Path path = new Path(this.dir, "file-" + fileID);
                         String content = String.valueOf(fileID);
                         OutputStream os = this.fs.create(path, true);
                         os.write(content.getBytes());
-                        if (i % 10 == 0) System.out.format("write %s to file %d%n", content, fileID);
-                        os.close();
-                        for (int j = i; j >=0 && j > i - 5; j--) {
-                            fileID = j * this.totalThread + this.threadID;
-                            path = new Path(this.dir, "file-" + fileID);
-                            InputStream is = fs.open(path);
-                            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                            content = br.readLine();
-                            if (i % 10 == 0) System.out.format("read %s from file %d%n", content, fileID);
-                            br.close();
-                            is.close();
-                        }
+                        System.out.format("write %s to file %d%n", content, fileID);
+                        // System.out.println("wait user input");
+                        // String str = scanner.nextLine();
+                        // System.out.println("user input is: " + str);
+                        Thread.sleep(20000);
+                        System.out.format("write %s to file %d done after 20 Seconds%n", content, fileID);
                     }
                     return null;
                 });
@@ -115,15 +87,28 @@ public class hdfs_test {
         String hdfs_dir = "/user/"+username;
         
         try {
-            UserGroupInformation ugi = UserGroupInformation.createProxyUser(username, UserGroupInformation.getCurrentUser());
+            // UserGroupInformation ugi = UserGroupInformation.createProxyUser(username, UserGroupInformation.getCurrentUser());
 
             FileSystem fs = FileSystem.get(CONF);
 
             ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
 
             for (int i = 0; i < threadSize; i++) {
-                ThreadTask task = new ThreadTask(ugi, fs, hdfs_dir, i, threadSize, numOfActions);
-                executor.execute(task);
+                // ThreadTask task = new ThreadTask(ugi, fs, hdfs_dir, i, threadSize, numOfActions);
+                // executor.execute(task);
+                int finalI = i;
+                executor.submit(() -> {
+                    try {
+                        Path path = new Path(hdfs_dir, "file-" + finalI);
+                        OutputStream os = fs.create(path, true);
+                        os.write("test".getBytes());
+                        System.out.format("file %d start%n", finalI);
+                        Thread.sleep(15000);
+                        System.out.format("file %d done%n", finalI);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
 
             executor.shutdown();
