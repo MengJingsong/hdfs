@@ -22,101 +22,64 @@ import java.io.InputStreamReader;
 
 
 public class hdfs_test {
-    private static final String HADOOP_VERSION = "2.9.2";
-    private static final String CORE_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/core-site.xml";
-    private static final String HDFS_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/hdfs-site.xml";
-    private static final String YARN_SITE_PATH_STR = "/users/jason92/hadoop-" + HADOOP_VERSION + "/etc/hadoop/yarn-site.xml";
     private static final Configuration CONF = new Configuration();
-    // private static final String HDFS_DIR = "/user/jason92/";
-
-    private static class ThreadTask implements Runnable {
-        private FileSystem fs;
-        private Path dir;
-        private int threadID;
-        private int totalThread;
-        private int numOfActions;
-        private UserGroupInformation ugi;
-
-
-
-        public ThreadTask (UserGroupInformation ugi, FileSystem fs, String dir, int threadID, int totalThread, int numOfActions) {
-            this.fs = fs;
-            this.dir = new Path(dir);
-            this.threadID = threadID;
-            this.totalThread = totalThread;
-            this.numOfActions = numOfActions;
-            this.ugi = ugi;
-        }
-
-        @Override
-        public void run() {
-
-            try {
-                this.ugi.doAs((java.security.PrivilegedExceptionAction<Void>) () -> {
-                    // Scanner scanner = new Scanner(System.in);
-                    for (int i = 0; i < this.numOfActions; i++) {
-                        int fileID = i * this.totalThread + this.threadID;
-                        Path path = new Path(this.dir, "file-" + fileID);
-                        String content = String.valueOf(fileID);
-                        OutputStream os = this.fs.create(path, true);
-                        os.write(content.getBytes());
-                        System.out.format("write %s to file %d%n", content, fileID);
-                        // System.out.println("wait user input");
-                        // String str = scanner.nextLine();
-                        // System.out.println("user input is: " + str);
-                        Thread.sleep(20000);
-                        System.out.format("write %s to file %d done after 20 Seconds%n", content, fileID);
-                        os.close();
-                    }
-                    return null;
-                });
-            } catch (Exception e) {
-                System.err.format("Exception in run(): %s", e.getMessage());
-            }
-        }
-    };
 
     public static void main(String[] args) {
-        CONF.addResource(new Path(CORE_SITE_PATH_STR));
-        CONF.addResource(new Path(HDFS_SITE_PATH_STR));
-        CONF.addResource(new Path(YARN_SITE_PATH_STR));
-
-        String username = args[0];
-        // int threadPoolSize = Integer.parseInt(args[1]);
-        int threadSize = Integer.parseInt(args[1]);
-        // int numOfActions = Integer.parseInt(args[3]);
+        String hadoop_version = args[0];
+        String core_site_path = "/users/jason92/hadoop-" + hadoop_version + "/etc/hadoop/core-site.xml";
+        String hdfs_site_path = "/users/jason92/hadoop-" + hadoop_version + "/etc/hadoop/hdfs-site.xml";
+        String yarn_site_path = "/users/jason92/hadoop-" + hadoop_version + "/etc/hadoop/yarn-site.xml";
+        String username = args[1];
+        int threadSize = Integer.parseInt(args[2]);
+	    int dataSize = Integer.parseInt(args[3]);
         String hdfs_dir = "/user/"+username;
+
+        CONF.addResource(new Path(core_site_path));
+        CONF.addResource(new Path(hdfs_site_path));
+        CONF.addResource(new Path(yarn_site_path));
+        
         
         try {
-            // UserGroupInformation ugi = UserGroupInformation.createProxyUser(username, UserGroupInformation.getCurrentUser());
 
             FileSystem fs = FileSystem.get(CONF);
 
-            ExecutorService executor = Executors.newFixedThreadPool(threadSize);
-
             for (int i = 0; i < threadSize; i++) {
-                // ThreadTask task = new ThreadTask(ugi, fs, hdfs_dir, i, threadSize, numOfActions);
-                // executor.execute(task);
-                int finalI = i;
-                executor.submit(() -> {
-                    try {
-                        Path path = new Path(hdfs_dir, "file-" + finalI);
-                        OutputStream os = fs.create(path, true);
-                        os.write("test".getBytes());
-                        System.out.format("file %d start%n", finalI);
-                        Thread.sleep(3600000);
-                        System.out.format("file %d done%n", finalI);
-                        os.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                int ii = i;
+		        int sz = dataSize;
+		        byte[] data = new byte[dataSize];
+                try {
+                    Path path = new Path(hdfs_dir, "file-" + ii);
+                    OutputStream os = fs.create(path, true);
+                    Thread closeThread = new Thread(() -> {
+                        try {
+                            Thread.sleep(500);
+                            System.out.println("closeThread waked up");
+                            os.close();
+                            System.out.println("os closed");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    long start = System.nanoTime();
+                    closeThread.start();
+                    System.out.println("ready");
+                    Thread.sleep(5000);
+                    System.out.println("go");
+                    os.write(data);
+
+                    long end = System.nanoTime();
+                    long ms = (end - start) / 1000000;
+                    System.out.format("file %d: write %d bytes to hdfs took %d ms%n", ii, sz, ms);
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
-            executor.shutdown();
+            fs.close();
 
         } catch (Exception e) {
-            System.err.format("Exception in main(): %s", e.getMessage());
+            e.printStackTrace();
         }
 
         
