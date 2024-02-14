@@ -54,11 +54,8 @@ public class hdfs_test {
                 executor.schedule(task, 2, TimeUnit.SECONDS);
             }
 
-            // ScheduledTask killer = new ScheduledTask(1000);
-            // executor.schedule(killer, 2, TimeUnit.SECONDS);
-
             executor.shutdown();
-            executor.awaitTermination(60, TimeUnit.SECONDS);
+            executor.awaitTermination(200, TimeUnit.SECONDS);
             executor.shutdownNow();
             System.out.println("executor shutdown");
             fs.close();
@@ -72,8 +69,8 @@ public class hdfs_test {
 
     public static class ScheduledTask implements Runnable {
         static AtomicInteger GlobalID = new AtomicInteger(0);
+        static AtomicInteger counter = new AtomicInteger(0);
         int id;
-        boolean killer;
         int waitMS = 0;
         FileSystem fs;
         byte[] data;
@@ -83,7 +80,6 @@ public class hdfs_test {
         public ScheduledTask(FileSystem fs, byte[] data, Path path) {
             try{
                 id = GlobalID.getAndIncrement();
-                killer = false;
                 this.fs = fs;
                 this.data = data;
                 this.path = path;
@@ -94,27 +90,12 @@ public class hdfs_test {
             }
         }
 
-        public ScheduledTask(int waitMS) {
-            // id = GlobalID.getAndIncrement();
-            killer = true;
-            this.waitMS = waitMS;
-            formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS");
-        }
-
         @Override
         public void run() {
             try {
-                if (killer) {
-                    Thread.sleep(waitMS);
-                    LocalTime exitTime = LocalTime.now();
-                    String formattedExitTime = exitTime.format(formatter);
-                    System.out.format("exit at [%s]%n", formattedExitTime);
-                    System.exit(0);
-                    return;
-                }
-
-                
                 long start = System.nanoTime();
+                System.out.format("%d: started%n", id);
+                if (counter.incrementAndGet() == GlobalID.get()) System.out.println("exit");
                 os.write(data);
                 long end = System.nanoTime();
 
